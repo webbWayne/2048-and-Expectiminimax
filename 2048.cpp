@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include <chrono>
 
 #define ll long long
 #define vi vector<ll>
@@ -9,6 +10,7 @@
 #define s second
 
 using namespace std;
+using namespace std::chrono;
 
 ll score;
 
@@ -37,7 +39,7 @@ void reverse(vvi &matrix) {
   return;
 }
 
-void printMatrix(vvi matrix) {
+void printMatrix(vvi &matrix) {
   for(int i = 0; i < 4; i++) {
     for(int j = 0; j < 4; j++) {
       cout<<matrix[i][j]<<" ";
@@ -48,7 +50,7 @@ void printMatrix(vvi matrix) {
   return;
 }
 
-vvi mergeLeft(vvi matrix) {
+void mergeLeft(vvi &matrix) {
   for(int i = 0; i < 4; i++) {
     // basically the leftmost blocks that can merge, merge.
     // The goal is to find a pair of duplicate elements, and merge them. In case, there are three of them,
@@ -82,47 +84,53 @@ vvi mergeLeft(vvi matrix) {
       ind++;
     }
   }
-
-  return matrix;
 }
 
-vvi mergeRight(vvi matrix) {
+void mergeRight(vvi &matrix) {
     reverse(matrix);
-    matrix = mergeLeft(matrix);
+    mergeLeft(matrix);
     reverse(matrix);
-    return matrix;
 }
 
-vvi mergeUp(vvi matrix) {
+void mergeUp(vvi &matrix) {
     transpose(matrix);
-    matrix = mergeLeft(matrix);
+    mergeLeft(matrix);
     transpose(matrix);
-    return matrix;
 }
 
-vvi mergeDown(vvi matrix) {
+void mergeDown(vvi &matrix) {
     reverse(matrix);
     transpose(matrix);
     reverse(matrix);
-    matrix = mergeLeft(matrix);
+    mergeLeft(matrix);
     reverse(matrix);
     transpose(matrix);
     reverse(matrix);
-    return matrix;
 }
 
-bool checkEnd(vvi matrix) {
+bool checkEnd(vvi &matrix) {
   ll temp = score;
-  bool flag = false;
-  if(mergeLeft(matrix) == matrix && mergeRight(matrix) == matrix
-&& mergeUp(matrix) == matrix && mergeDown(matrix) == matrix) flag = true;
+  bool flag = true;
+  vvi tempMatrix = matrix;
+  mergeLeft(matrix);
+  if(matrix != tempMatrix) flag = false;
+  matrix = tempMatrix;
+  mergeRight(matrix);
+  if(matrix != tempMatrix) flag = false;
+  matrix = tempMatrix;
+  mergeUp(matrix);
+  if(matrix != tempMatrix) flag = false;
+  matrix = tempMatrix;
+  mergeDown(matrix);
+  if(matrix != tempMatrix) flag = false;
+  matrix = tempMatrix;
 
   score = temp;
 
   return flag;
 }
 
-vvi fillTile(vvi matrix) {
+void fillTile(vvi &matrix) {
   vector<ii> freeTiles;
   for(int i = 0; i < 4; i++) {
     for(int j = 0; j < 4; j++)
@@ -139,9 +147,7 @@ vvi fillTile(vvi matrix) {
   else {
     matrix[freeTiles[randInd].f][freeTiles[randInd].s] = 4;
   }
-
-  return matrix;
-}
+ }
 
 int points(vvi matrix) {
   ll maxi = 0;
@@ -159,7 +165,7 @@ int points(vvi matrix) {
   return result;
 }
 
-pair<ll, vector<char>> expectimax(vvi matrix, int depth, bool player) {
+pair<ll, vector<char>> expectimax(vvi& matrix, int depth, bool player) {
   if(depth == 0 || checkEnd(matrix)) return {points(matrix), {'d', 'r', 'u', 'l'}};
   ll result = 0;
   
@@ -167,20 +173,22 @@ pair<ll, vector<char>> expectimax(vvi matrix, int depth, bool player) {
   
   if(player) {
     ll temp = score;
-    vvi tempMatrix = mergeLeft(matrix);
+    vvi tempMatrix = matrix;
+    mergeLeft(matrix);
     ll recur = 0;
     if(tempMatrix != matrix) {
-      recur = expectimax(tempMatrix, depth-1, false).f;
+      recur = expectimax(matrix, depth-1, false).f;
       moves[0] = {recur, 'l'};
     }
 
     else {
-      moves[0] = {-1000, 'l'};
+      moves[0] = {0, 'l'};
     }
 
-    tempMatrix = mergeRight(matrix);
-    if(tempMatrix != matrix) {
-      recur = expectimax(tempMatrix, depth-1, false).f;
+    matrix = tempMatrix;
+    mergeRight(matrix);
+    if(tempMatrix != matrix) {   
+      recur = expectimax(matrix, depth-1, false).f;
       moves[1] = {recur, 'r'};
     }
 
@@ -188,19 +196,21 @@ pair<ll, vector<char>> expectimax(vvi matrix, int depth, bool player) {
       moves[1] = {0, 'r'};
     }
 
-    tempMatrix = mergeUp(matrix);
+    matrix = tempMatrix;
+    mergeUp(matrix);
     if(tempMatrix != matrix) {
-      recur = expectimax(tempMatrix, depth-1, false).f;
+      recur = expectimax(matrix, depth-1, false).f;
       moves[2] = {recur, 'u'};
     }
 
     else {
       moves[2] = {0, 'u'};
     }
-  
-    tempMatrix = mergeDown(matrix);
+
+    matrix = tempMatrix;
+    mergeDown(matrix);
     if(tempMatrix != matrix) {
-      recur = expectimax(tempMatrix, depth-1, false).f;
+      recur = expectimax(matrix, depth-1, false).f;
       moves[3] = {recur, 'd'}; 
     }
 
@@ -211,6 +221,7 @@ pair<ll, vector<char>> expectimax(vvi matrix, int depth, bool player) {
     score = temp;
     sort(moves.begin(), moves.end());
     result = moves[3].f;
+    matrix = tempMatrix;
   }
 
   else {
@@ -236,96 +247,99 @@ pair<ll, vector<char>> expectimax(vvi matrix, int depth, bool player) {
     foo[i] = moves[3-i].s;
   }
 
+
   return {result, foo};
 }
 
 int main() {
+  auto start = high_resolution_clock::now();
   srand(time(0));
   score = 0;
   vector<vector<ll>> matrix(4, vi(4, 0));
 
-  matrix = fillTile(matrix);
-  matrix = fillTile(matrix);
+  fillTile(matrix);
+  fillTile(matrix);
 
   printMatrix(matrix);
 
   while(!checkEnd(matrix)) {
-    pair<ll, vector<char>> dump = expectimax(matrix, 7, true);
+    pair<ll, vector<char>> dump = expectimax(matrix, 4, true);
     vector<char> moves = dump.s;
 
-    cout<<moves[0];
+    cout<<moves[0]<<" "<<moves[1]<<" "<<moves[2]<<" "<<moves[3]<<" ";
     cout<<endl;
     char move = moves[0];
 
-  while(true) {
-    if(move == 'l') {
-      ll temp = score;
-      vvi tempMatrix = mergeLeft(matrix);
-      if(tempMatrix == matrix) {
-        score = temp;
-        for(int i = 0; i < 4; i++) {
-          if(moves[i] == 'l') move = moves[i+1]; //I don't think segfault will occur.
-        } 
-      }
-      else {
-        matrix = tempMatrix;
-        break;
-      }
-    }
-
-    if(move == 'r') {
-      ll temp = score;
-      vvi tempMatrix = mergeRight(matrix);
-      if(tempMatrix == matrix) {
-        score = temp;
-        for(int i = 0; i < 4; i++) {
-          if(moves[i] == 'r') move = moves[i+1];
+    while(true) {
+      if(move == 'l') {
+        vvi tempMatrix(4, vi(4));
+        ll temp = score;
+        tempMatrix = matrix;
+        mergeLeft(matrix);
+        if(tempMatrix == matrix) {
+          score = temp;
+          for(int i = 0; i < 4; i++) {
+            if(moves[i] == 'l') move = moves[i+1]; //I don't think segfault will occur.
+          } 
         }
+
+        else break;
       }
 
-      else {
-        matrix = tempMatrix;
-        break;
+      if(move == 'r') {
+        ll temp = score;
+        vvi tempMatrix = matrix;
+        mergeRight(matrix);
+        if(tempMatrix == matrix) {
+          score = temp;
+          for(int i = 0; i < 4; i++) {
+            if(moves[i] == 'r') move = moves[i+1];
+          }
+        }
+
+        else 
+          break;
       }
-    }
     
-    if(move == 'u') {
-      ll temp = score;
-      vvi tempMatrix = mergeUp(matrix);
-      if(tempMatrix == matrix) {
-        score = temp;
-        for(int i = 0; i < 4; i++) {
-          if(moves[i] == 'u') move = moves[i+1];
+      if(move == 'u') {
+        ll temp = score;
+        vvi tempMatrix = matrix;
+        mergeUp(matrix);
+        if(tempMatrix == matrix) {
+          score = temp;
+          for(int i = 0; i < 4; i++) {
+            if(moves[i] == 'u') move = moves[i+1];
+          }
         }
+
+        else 
+          break;
       }
 
-      else {
-        matrix = tempMatrix;
-        break;
-      }
-    }
-
-    if(move == 'd') {
-      ll temp = score;
-      vvi tempMatrix = mergeDown(matrix);
-      if(tempMatrix == matrix) {
-        score = temp;
-        for(int i = 0; i < 4; i++) {
-          if(moves[i] == 'd') move = moves[i+1];
+      if(move == 'd') {
+        ll temp = score;
+        vvi tempMatrix = matrix;
+        mergeDown(matrix);
+        if(tempMatrix == matrix) {
+          score = temp;
+          for(int i = 0; i < 4; i++) {
+            if(moves[i] == 'd') move = moves[i+1];
+          }
         }
-      }
 
-      else {
-        matrix = tempMatrix;
-        break;
+        else 
+          break;
       }
-    }
   }
 
     cout<<score<<endl;
-    matrix = fillTile(matrix);
+    fillTile(matrix);
     cout<<endl;
     printMatrix(matrix);
   }
+
+  auto stop = high_resolution_clock::now();
+  auto duration = duration_cast<milliseconds>(stop - start);
+  cout<<"Time taken: "<<duration.count()<<" ms"<<endl;
   return 0;
 }
