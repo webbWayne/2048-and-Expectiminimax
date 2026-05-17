@@ -39,17 +39,6 @@ void reverse(vvi &matrix) {
   return;
 }
 
-void printMatrix(vvi &matrix) {
-  for(int i = 0; i < 4; i++) {
-    for(int j = 0; j < 4; j++) {
-      cout<<matrix[i][j]<<" ";
-    }
-    cout<<endl;
-  }
-
-  return;
-}
-
 void mergeLeft(vvi &matrix) {
   for(int i = 0; i < 4; i++) {
     // basically the leftmost blocks that can merge, merge.
@@ -129,25 +118,6 @@ bool checkEnd(vvi &matrix) {
 
   return flag;
 }
-
-void fillTile(vvi &matrix) {
-  vector<ii> freeTiles;
-  for(int i = 0; i < 4; i++) {
-    for(int j = 0; j < 4; j++)
-      if(matrix[i][j] == 0) freeTiles.pb({i, j});
-  }
-
-  int randInd = rand() % freeTiles.size();
-
-  bool flag = ((rand() % 100) < 90);
-  if(flag) {
-    matrix[freeTiles[randInd].f][freeTiles[randInd].s] = 2;
-  }
-
-  else {
-    matrix[freeTiles[randInd].f][freeTiles[randInd].s] = 4;
-  }
- }
 
 int points(vvi matrix) {
   vvi weights = {
@@ -271,16 +241,25 @@ int main() {
   score = 0;
   vector<vector<ll>> matrix(4, vi(4, 0));
 
-  fillTile(matrix);
-  fillTile(matrix);
+  // fillTile(matrix);
+  // fillTile(matrix);
 
-  printMatrix(matrix);
+  // printMatrix(matrix);
+  //
 
-  while(!checkEnd(matrix)) {
-    pair<ll, vector<char>> dump = expectimax(matrix, 5, true);
+  for(int i = 0; i < 4; i++) {
+    for(int j = 0; j < 4; j++) {
+      cin>>matrix[i][j];
+    }
+  }
+
+  if(checkEnd(matrix)) return 0;
+
+  // while(!checkEnd(matrix)) {
+    pair<ll, vector<char>> dump = expectimax(matrix, 6, true);
     vector<char> moves = dump.s;
 
-    cout<<moves[0]<<endl;
+    // cout<<moves[0]<<endl;
     char move = moves[0];
 
     while(true) {
@@ -345,14 +324,16 @@ int main() {
       }
   }
 
-    cout<<score<<endl;
-    fillTile(matrix);
-    cout<<endl;
-    printMatrix(matrix);
-  }
+  cout<<move;
+
+    // cout<<score<<endl;
+    // // fillTile(matrix);
+    // cout<<endl;
+    // printMatrix(matrix);
+  // }
 
   auto stop = high_resolution_clock::now();
   auto duration = duration_cast<milliseconds>(stop - start);
-  cout<<"Time taken: "<<duration.count()<<" ms"<<endl;
+  // cout<<"Time taken: "<<duration.count()<<" ms"<<endl;
   return 0;
 }
